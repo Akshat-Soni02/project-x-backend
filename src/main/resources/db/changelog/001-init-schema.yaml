@@ -1,0 +1,327 @@
+databaseChangeLog:
+  - changeSet:
+      id: init-schema
+      author: akshat
+
+      changes:
+
+        # ---------- USERS ----------
+        - createTable:
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: email
+                  type: varchar(255)
+                  constraints:
+                    unique: true
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp
+              - column:
+                  name: updated_at
+                  type: timestamp
+
+        - createIndex:
+            tableName: users
+            columns:
+              - column:
+                  name: email
+            unique: true
+            indexName: idx_users_email
+
+
+        # ---------- AUDIO STORE ----------
+        - createTable:
+            tableName: audio_store
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: storage_url
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: varchar(20)
+                  defaultValue: uploaded
+                  constraints:
+                    nullable: false
+              - column:
+                  name: duration_seconds
+                  type: int
+              - column:
+                  name: created_at
+                  type: timestamp
+              - column:
+                  name: updated_at
+                  type: timestamp
+              - column:
+                  name: deleted_at
+                  type: timestamp
+
+        - addForeignKeyConstraint:
+            baseTableName: audio_store
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_audio_store_user
+
+        - createIndex:
+            tableName: audio_store
+            columns:
+              - column:
+                  name: user_id
+            indexName: idx_audio_user_id
+
+        - createIndex:
+            tableName: audio_store
+            columns:
+              - column:
+                  name: status
+            indexName: idx_audio_status
+
+
+        # ---------- PIPELINE STAGES ----------
+        - createTable:
+            tableName: pipeline_stages
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: audio_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: stage_name
+                  type: varchar(100)
+              - column:
+                  name: model
+                  type: varchar(100)
+              - column:
+                  name: started_at
+                  type: timestamp
+              - column:
+                  name: completed_at
+                  type: timestamp
+              - column:
+                  name: status
+                  type: varchar(20)
+                  defaultValue: pending
+
+        - addForeignKeyConstraint:
+            baseTableName: pipeline_stages
+            baseColumnNames: audio_id
+            referencedTableName: audio_store
+            referencedColumnNames: id
+            constraintName: fk_stages_audio
+
+        - createIndex:
+            tableName: pipeline_stages
+            columns:
+              - column:
+                  name: audio_id
+            indexName: idx_stages_audio_id
+
+        - createIndex:
+            tableName: pipeline_stages
+            columns:
+              - column:
+                  name: stage_name
+            indexName: idx_stages_name
+
+
+        # ---------- PIPELINE OUTPUTS ----------
+        - createTable:
+            tableName: pipeline_outputs
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: stage_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: content
+                  type: text
+              - column:
+                  name: data
+                  type: jsonb
+              - column:
+                  name: start_second
+                  type: int
+              - column:
+                  name: end_second
+                  type: int
+              - column:
+                  name: created_at
+                  type: timestamp
+              - column:
+                  name: deleted_at
+                  type: timestamp
+
+        - addForeignKeyConstraint:
+            baseTableName: pipeline_outputs
+            baseColumnNames: stage_id
+            referencedTableName: pipeline_stages
+            referencedColumnNames: id
+            constraintName: fk_outputs_stage
+
+        - createIndex:
+            tableName: pipeline_outputs
+            columns:
+              - column:
+                  name: stage_id
+            indexName: idx_outputs_stage_id
+
+
+        # ---------- GENERAL TAGS ----------
+        - createTable:
+            tableName: general_tags
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: name
+                  type: uuid
+                  constraints:
+                    unique: true
+              - column:
+                  name: description
+                  type: text
+
+
+        # ---------- USER TAGS ----------
+        - createTable:
+            tableName: tags
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: text
+              - column:
+                  name: created_at
+                  type: timestamp
+              - column:
+                  name: updated_at
+                  type: timestamp
+
+        - addForeignKeyConstraint:
+            baseTableName: tags
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_tags_user
+
+        - createIndex:
+            tableName: tags
+            columns:
+              - column:
+                  name: user_id
+              - column:
+                  name: name
+            indexName: idx_tags_user_name
+            unique: true
+
+
+        # ---------- USAGE LOGS ----------
+        - createTable:
+            tableName: usage_logs
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: audio_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: input_token
+                  type: int
+              - column:
+                  name: output_token
+                  type: int
+              - column:
+                  name: thought_token
+                  type: int
+              - column:
+                  name: model
+                  type: varchar(100)
+              - column:
+                  name: created_at
+                  type: timestamp
+
+        - addForeignKeyConstraint:
+            baseTableName: usage_logs
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_logs_user
+
+        - addForeignKeyConstraint:
+            baseTableName: usage_logs
+            baseColumnNames: audio_id
+            referencedTableName: audio_store
+            referencedColumnNames: id
+            constraintName: fk_logs_audio
+
+        - createIndex:
+            tableName: usage_logs
+            columns:
+              - column:
+                  name: user_id
+            indexName: idx_logs_user_id
+
+        - createIndex:
+            tableName: usage_logs
+            columns:
+              - column:
+                  name: audio_id
+            indexName: idx_logs_audio_id
